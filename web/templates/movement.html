@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% set titles = {'GIRIS':'Stok Girişi (Mal Kabul)','CIKIS':'Stok Çıkışı','TRANSFER':'Lokasyon Transferi','SAYIM':'Sayım Düzeltme'} %}
+{% set F = request.form if request.method == 'POST' else request.args %}
+{% block content %}
+<div class="card mid mv-{{ kind }}">
+  <h1>{{ titles[mtype] }}</h1>
+  <form method="post" id="mvform" autocomplete="off" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label>Stok Kodu / Barkod (yazın, listeden seçin veya okutun)
+      <div class="with-btn"><input name="code" id="code" required {{ 'autofocus' if not pre_code }} list="sugg" value="{{ F.get('code', pre_code) }}">
+      <button type="button" class="btn scan-btn" data-scan-target="code" hidden>📷</button></div>
+    </label>
+    <datalist id="sugg"></datalist>
+    <div class="prod-box" id="info" hidden></div>
+
+    {% if mtype in ('CIKIS','TRANSFER') %}
+    <label>{{ 'Çıkış Yapılacak Lokasyon' if mtype=='CIKIS' else 'Kaynak Lokasyon (nereden)' }} *
+      <select name="from_location_id" id="from_loc" required><option value="">Önce ürünü seçin</option></select></label>
+    {% endif %}
+    {% if mtype in ('GIRIS','TRANSFER','SAYIM') %}
+    <label>{{ {'GIRIS':'Konulacağı Lokasyon (raf/göz)','TRANSFER':'Hedef Lokasyon (nereye)','SAYIM':'Sayılan Lokasyon'}[mtype] }} *
+      <select name="to_location_id" id="to_loc" required><option value="">— Seçin —</option>
+        {% for id, path in locs %}<option value="{{ id }}" {{ 'selected' if F.get('to_location_id')==id|string }}>{{ path }}</option>{% endfor %}</select></label>
+    <div id="loc_now" class="muted small"></div>
+    {% endif %}
+
+    <label>{{ 'Sayılan Gerçek Miktar (bu lokasyonda)' if mtype=='SAYIM' else 'Miktar' }} * <span id="unit" class="muted"></span>
+      <input name="qty" id="qty" inputmode="decimal" required value="{{ F.get('qty','') }}"></label>
+
+    {% if mtype == 'GIRIS' %}
+    <div class="grid2">
+      <label>Tedarikçi
+        <select name="supplier_id" id="supplier"><option value="">—</option>
+          {% for s in suppliers %}<option value="{{ s.id }}" {{ 'selected' if F.get('supplier_id')==s.id|string }}>{{ s.name }}</option>{% endfor %}</select></label>
+      <label>Fatura / İrsaliye No<input name="document_no" value="{{ F.get('document_no','') }}"></label>
+      <label>Belge Tarihi<input type="date" name="document_date" value="{{ F.get('document_date','') }}"></label>
+      {% if can('can_see_price') %}
+      <label>Birim Fiyat (KDV hariç)<input name="unit_price" id="price" inputmode="decimal" value="{{ F.get('unit_price','') }}"></label>
+      <label>Para Birimi<select name="currency" id="cur">{% for c in CURRENCIES %}<option>{{ c }}</option>{% endfor %}</select></label>
+      {% endif %}
+    </div>
+    <div class="grid2">
+      <label>Belge Türü<select name="kind">{% for k in ['Fatura','İrsaliye','Sertifika','Fotoğraf','Diğer'] %}<option>{{ k }}</option>{% endfor %}</select></label>
+      <label>Fatura / İrsaliye Dosyası (PDF veya fotoğraf)<input type="file" name="files" multiple accept=".pdf,image/*"></label>
+    </div>
+    {% elif mtype == 'CIKIS' %}
+    <div class="grid2">
+      <label>Proje / İş Emri / Makine No<input name="project" list="projects" value="{{ F.get('project','') }}" placeholder="ör. PRES-12 / İE-2026-045"></label>
+      <label>Teslim Alan Kişi<input name="receiver" value="{{ F.get('receiver','') }}"></label>
+    </div>
+    <datalist id="projects">{% for p in projects %}<option>{{ p }}</option>{% endfor %}</datalist>
+    {% endif %}
+    <label>Açıklama {{ '*' if mtype=='SAYIM' }}
+      <input name="note" {{ 'required' if mtype=='SAYIM' }} value="{{ F.get('note','') }}"
+        placeholder="{{ {'GIRIS':'Not…','CIKIS':'Kullanım yeri / sebebi…','TRANSFER':'Transfer sebebi…','SAYIM':'Sayım farkı nedeni…'}[mtype] }}"></label>
+    <button class="btn primary full {{ {'GIRIS':'in','CIKIS':'out'}.get(mtype,'') }}">Kaydet</button>
+    <button class="btn full" name="again" value="1">Kaydet ve Yeni Kalem (aynı belge)</button>
+  </form>
+</div>
+<script>
+const MT = "{{ mtype }}";
+const code = document.getElementById('code'), info = document.getElementById('info'), sugg = document.getElementById('sugg');
+const fromSel = document.getElementById('from_loc'), toSel = document.getElementById('to_loc'), locNow = document.getElementById('loc_now');
+const keepFrom = "{{ F.get('from_location_id','') }}";
+let prod = null, t;
+async function lookup() {
+  const v = code.value.trim();
+  if (!v) { info.hidden = true; prod = null; return; }
+  const r = await fetch('{{ url_for("api_product_lookup") }}?code=' + encodeURIComponent(v)).then(r => r.json());
+  info.hidden = false;
+  if (!r.found) { info.className = 'prod-box err'; info.textContent = 'Bu kodla ürün bulunamadı'; prod = null; return; }
+  prod = r;
+  info.className = 'prod-box';
+  info.innerHTML = '';
+  const b = document.createElement('b'); b.textContent = r.code; info.append(b, ' — ' + r.name);
+  if (r.brand || r.model) info.append(document.createElement('br'), (r.brand + ' ' + r.model).trim());
+  info.append(document.createElement('br'), 'Toplam stok: ' + r.quantity + ' ' + r.unit);
+  if (r.stocks.length) info.append(document.createElement('br'), '📍 ' + r.stocks.map(s => s.path + ': ' + s.qty_txt).join(' | '));
+  document.getElementById('unit').textContent = '(' + r.unit + ')';
+  if (fromSel) {
+    fromSel.innerHTML = '';
+    if (!r.stocks.length) fromSel.add(new Option('Bu ürün hiçbir lokasyonda yok', ''));
+    r.stocks.filter(s => s.qty > 0).forEach(s => fromSel.add(new Option(`${s.path}  (mevcut ${s.qty_txt} ${r.unit})`, s.id)));
+    if (keepFrom) fromSel.value = keepFrom;
+  }
+  if (toSel && !toSel.value && r.default_location_id) toSel.value = r.default_location_id;
+  const sup = document.getElementById('supplier'); if (sup && !sup.value && r.default_supplier_id) sup.value = r.default_supplier_id;
+  const pr = document.getElementById('price'); if (pr && !pr.value && r.last_price) { pr.placeholder = 'Son: ' + r.last_price + ' ' + r.currency; document.getElementById('cur').value = r.currency; }
+  showLocNow();
+}
+function showLocNow() {
+  if (!locNow || !prod || !toSel) return;
+  const s = prod.stocks.find(s => String(s.id) === toSel.value);
+  locNow.textContent = toSel.value ? ('Bu lokasyonda şu an: ' + (s ? s.qty_txt : '0') + ' ' + prod.unit) : '';
+}
+if (toSel) toSel.addEventListener('change', showLocNow);
+code.addEventListener('input', () => {
+  clearTimeout(t);
+  t = setTimeout(async () => {
+    lookup();
+    const r = await fetch('{{ url_for("api_search") }}?q=' + encodeURIComponent(code.value)).then(r => r.json());
+    sugg.innerHTML = '';
+    r.items.forEach(i => { const o = document.createElement('option'); o.value = i.code; o.label = i.label; sugg.appendChild(o); });
+  }, 250);
+});
+code.addEventListener('change', lookup);
+code.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookup(); document.getElementById('qty').focus(); } });
+code.addEventListener('scanned', () => { lookup(); document.getElementById('qty').focus(); });
+if (code.value) { lookup(); document.getElementById('qty').focus(); }
+</script>
+{% endblock %}

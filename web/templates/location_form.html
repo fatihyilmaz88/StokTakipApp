@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h1>{{ 'Lokasyon Düzenle' if lid else 'Yeni Lokasyon' }}</h1>
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label>Üst Lokasyon<select name="parent_id"><option value="">— (En üst: Depo/Bina) —</option>
+      {% for id, path in locs %}<option value="{{ id }}" {{ 'selected' if loc.parent_id==id }}>{{ path }}</option>{% endfor %}</select></label>
+    <div class="grid2">
+      <label>Kod * <small>(etikette yazar, ör. A-03-02)</small><input name="code" value="{{ loc.code }}" required></label>
+      <label>Tip<select name="type">{% for t in LOC_TYPES %}<option {{ 'selected' if loc.type==t }}>{{ t }}</option>{% endfor %}</select></label>
+    </div>
+    <label>Ad *<input name="name" value="{{ loc.name }}" required placeholder="ör. Hidrolik Raf 3"></label>
+    <label>Açıklama<input name="description" value="{{ loc.description }}"></label>
+    {% if lid %}<label class="chk"><input type="checkbox" name="active" value="1" {{ 'checked' if loc.active }}> Aktif</label>{% endif %}
+    <button class="btn primary full">Kaydet</button>
+  </form>
+</div>
+{% endblock %}

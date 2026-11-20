@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="head-row">
+    <div><h1>{{ req_no(r.id, r.created_at) }} {% if r.priority=='Acil' %}<span class="tag CIKIS">ACİL</span>{% endif %}</h1>
+      <p class="sub">{{ r.project }}</p></div>
+    <span class="st big {{ r.status }}">{{ REQ_STATUS[r.status] }}</span>
+  </div>
+  <ol class="flow">
+    <li class="done">Talep<br><small>{{ r.full_name }}<br>{{ r.created_at[:16] }}</small></li>
+    <li class="{{ 'done' if r.status in ('ONAYLANDI','KISMI','TAMAMLANDI') else ('bad' if r.status in ('REDDEDILDI','IPTAL') else 'now') }}">
+      {{ 'Reddedildi' if r.status=='REDDEDILDI' else ('İptal' if r.status=='IPTAL' else 'Onay') }}<br><small>{{ r.approver or '' }}<br>{{ (r.approved_at or '')[:16] }}</small></li>
+    <li class="{{ 'done' if r.status=='TAMAMLANDI' else ('now' if r.status in ('ONAYLANDI','KISMI') else '') }}">Ambar Teslim<br><small>{{ 'Kısmi' if r.status=='KISMI' else '' }}</small></li>
+  </ol>
+  <dl class="info">
+    <dt>Talep Eden</dt><dd>{{ r.full_name }} {% if r.department %}({{ r.department }}){% endif %}</dd>
+    <dt>İhtiyaç Tarihi</dt><dd>{{ r.needed_date or '-' }}</dd>
+    {% if r.note %}<dt>Açıklama</dt><dd>{{ r.note|nl2br }}</dd>{% endif %}
+    {% if r.decision_note %}<dt>Onaylayan Notu</dt><dd>{{ r.decision_note }}</dd>{% endif %}
+  </dl>
+</div>
+
+{% set issuing = r.status in ('ONAYLANDI','KISMI') and can('can_out') %}
+<section class="card">
+  <h2>Kalemler</h2>
+  {% if issuing %}<form method="post" action="{{ url_for('request_issue', rid=r.id) }}"><input type="hidden" name="csrf" value="{{ csrf_token }}">{% endif %}
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Ürün</th><th class="r">İstenen</th><th class="r">Verilen</th><th class="r">Stok</th>{% if issuing %}<th>Lokasyon</th><th>Teslim</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for it in items %}
+      {% set rem = it.qty - it.issued_qty %}
+      <tr class="{{ 'danger' if it.quantity < rem and rem > 0 }}">
+        <td><a href="{{ url_for('product_detail', pid=it.product_id) }}"><b>{{ it.code }}</b></a> {{ it.name }}<br><small>{{ it.brand }} {{ it.model }} {{ it.note }}</small></td>
+        <td class="r nowrap">{{ it.qty|qty }} {{ it.unit }}</td>
+        <td class="r">{{ it.issued_qty|qty }}</td>
+        <td class="r">{{ it.quantity|qty }}</td>
+        {% if issuing %}
+        <td>{% if rem > 0 %}<select name="loc_{{ it.id }}">
+          {% for s in stocks[it.product_id] %}<option value="{{ s.id }}">{{ s.path }} ({{ s.qty|qty }})</option>{% else %}<option value="">STOK YOK</option>{% endfor %}
+        </select>{% endif %}</td>
+        <td>{% if rem > 0 %}<input name="qty_{{ it.id }}" class="qty-in" inputmode="decimal" value="{{ [rem, stocks[it.product_id][0].qty]|min|qty if stocks[it.product_id] else '' }}">{% else %}✔{% endif %}</td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% if issuing %}
+    <label>Teslim Alan<input name="receiver" value="{{ r.full_name }}"></label>
+    <button class="btn out full">Seçilen Miktarları Teslim Et (stoktan düş)</button>
+  </form>
+  {% if r.status=='KISMI' %}<form method="post" action="{{ url_for('request_close', rid=r.id) }}" onsubmit="return confirm('Kalan miktarlar verilmeden talep kapatılsın mı?')"><input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn full">Kalanı Verme, Talebi Kapat</button></form>{% endif %}
+  {% endif %}
+</section>
+
+{% if r.status=='BEKLIYOR' and can('can_approve') %}
+<section class="card">
+  <h2>Onay</h2>
+  <form method="post" action="{{ url_for('request_decide', rid=r.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label>Not (red için zorunlu)<input name="decision_note"></label>
+    <div class="actions"><button class="btn in" name="decision" value="ONAYLANDI">✔ Onayla</button>
+    <button class="btn out" name="decision" value="REDDEDILDI">✕ Reddet</button></div>
+  </form>
+</section>
+{% endif %}
+{% if r.status in ('BEKLIYOR','ONAYLANDI') and (r.requester_id == g.user.id or can('is_admin')) %}
+<form method="post" action="{{ url_for('request_cancel', rid=r.id) }}" onsubmit="return confirm('Talep iptal edilsin mi?')">
+  <input type="hidden" name="csrf" value="{{ csrf_token }}"><button class="btn">Talebi İptal Et</button></form>
+{% endif %}
+
+{% set entity='request' %}{% set eid=r.id %}{% set allow_upload=True %}
+{% include "_attachments.html" %}
+
+{% if moves %}<section class="card"><h2>Teslimat Hareketleri</h2>{% include "_moves.html" %}</section>{% endif %}
+{% endblock %}

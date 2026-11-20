@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📊 Raporlar</h1>
+<div class="report-grid">
+  {% if can('can_report') %}
+  <a class="card rep" href="{{ url_for('report_consumption') }}"><b>Tüketim Raporu</b><span>Proje/makine, ürün, kişi veya departman bazında ne kadar malzeme çıktı</span></a>
+  <a class="card rep" href="{{ url_for('report_reorder') }}"><b>Sipariş Önerisi</b><span>Minimum stok altındakiler, tedarikçiye göre gruplu, önerilen miktarla</span></a>
+  <a class="card rep" href="{{ url_for('report_dead') }}"><b>Hareketsiz Stok</b><span>Uzun süredir kullanılmayan, rafta para bağlayan malzemeler</span></a>
+  <a class="card rep" href="{{ url_for('movements') }}"><b>Tüm Hareketler</b><span>Tarih, lokasyon, kişi, tedarikçi filtreli hareket dökümü</span></a>
+  <a class="card rep" href="{{ url_for('products', csv=1) }}"><b>Stok Listesi (Excel)</b><span>Tüm ürünlerin güncel miktarı ve lokasyonları</span></a>
+  {% endif %}
+  {% if can('can_see_price') %}
+  <a class="card rep" href="{{ url_for('report_value') }}"><b>Stok Değeri</b><span>Kategori veya lokasyon bazında envanter değeri</span></a>
+  {% endif %}
+  {% if can('is_admin') %}
+  <a class="card rep" href="{{ url_for('report_audit') }}"><b>Denetim Kaydı</b><span>Kim, ne zaman, neyi değiştirdi (ürün, kullanıcı, dosya, talep)</span></a>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="prod-head">
+    {% if p.image_id %}<a href="{{ url_for('attachment_get', aid=p.image_id) }}" target="_blank"><img class="prod-img" src="{{ url_for('attachment_get', aid=p.image_id) }}" alt=""></a>{% endif %}
+    <div class="grow">
+      <h1>{{ p.code }}{% if not p.active %} <span class="tag">PASİF</span>{% endif %}</h1>
+      <p class="sub">{{ p.name }}</p>
+      {% if p.brand or p.model %}<p class="bm"><b>{{ p.brand }}</b> {{ p.model }}</p>{% endif %}
+    </div>
+    <div class="stock-big {{ 'danger' if p.quantity <= 0 else ('warn' if p.min_stock > 0 and p.quantity <= p.min_stock) }}">
+      {{ p.quantity|qty }} <small>{{ p.unit }}</small>
+    </div>
+  </div>
+  {% if p.active %}
+  <div class="actions">
+    {% if can('can_in') %}<a class="btn in" href="{{ url_for('movement', kind='giris', pid=p.id) }}">＋ Giriş</a>{% endif %}
+    {% if can('can_out') %}<a class="btn out" href="{{ url_for('movement', kind='cikis', pid=p.id) }}">－ Çıkış</a>{% endif %}
+    {% if can('can_transfer') %}<a class="btn" href="{{ url_for('movement', kind='transfer', pid=p.id) }}">⇄ Transfer</a>{% endif %}
+    {% if can('can_count') %}<a class="btn" href="{{ url_for('movement', kind='sayim', pid=p.id) }}">Sayım</a>{% endif %}
+    {% if can('can_edit') %}<a class="btn" href="{{ url_for('product_edit', pid=p.id) }}">Düzenle</a>
+    <a class="btn" href="{{ url_for('product_new', kopya=p.id) }}">Kopyala</a>{% endif %}
+    <a class="btn" href="{{ url_for('labels', urun=p.id) }}" target="_blank">🏷 QR Etiket</a>
+  </div>
+  {% elif can('can_edit') %}<div class="actions"><a class="btn" href="{{ url_for('product_edit', pid=p.id) }}">Düzenle / Aktifleştir</a></div>{% endif %}
+</div>
+
+<div class="cols">
+<section class="card">
+  <h2>📍 Nerede? (lokasyon bazlı stok)</h2>
+  {% if stocks %}
+  <table class="tbl"><tbody>
+  {% for s in stocks %}
+    <tr onclick="location='{{ url_for('location_detail', lid=s.location_id) }}'"><td><b>{{ s.code }}</b><br><small>{{ loc_paths.get(s.location_id) }}</small></td>
+    <td class="r nowrap"><b>{{ s.qty|qty }}</b> {{ p.unit }}</td></tr>
+  {% endfor %}</tbody></table>
+  {% else %}<p class="muted">Stokta yok.{% if p.default_location_id %} Varsayılan yeri: <b>{{ loc_paths.get(p.default_location_id) }}</b>{% endif %}</p>{% endif %}
+  {% if open_req %}
+  <h3>Açık Talepler</h3>
+  <table class="tbl"><tbody>{% for r in open_req %}
+    <tr onclick="location='{{ url_for('request_detail', rid=r.id) }}'"><td>{{ req_no(r.id, r.created_at) }}</td><td>{{ r.full_name }}</td><td class="r">{{ r.rem|qty }}</td></tr>
+  {% endfor %}</tbody></table>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Bilgiler</h2>
+  <dl class="info">
+    <dt>Kategori</dt><dd>{{ cat_path or '-' }}</dd>
+    <dt>Barkod</dt><dd>{{ p.barcode or '-' }}</dd>
+    <dt>Varsayılan Yer</dt><dd>{{ loc_paths.get(p.default_location_id, '-') }}</dd>
+    <dt>Ana Tedarikçi</dt><dd>{% if p.supplier_name %}<a href="{{ url_for('supplier_detail', sid=p.default_supplier_id) }}">{{ p.supplier_name }}</a>{% else %}-{% endif %}</dd>
+    <dt>Min. / Maks.</dt><dd>{{ p.min_stock|qty }} / {{ p.max_stock|qty }} {{ p.unit }}</dd>
+    {% if can('can_see_price') %}<dt>Son Alış Fiyatı</dt><dd>{{ p.last_price|money(p.currency) }}</dd>
+    <dt>Stok Değeri</dt><dd>{{ (p.quantity * p.last_price)|money(p.currency) }}</dd>{% endif %}
+    <dt>Oluşturan</dt><dd>{{ p.creator or '-' }} · {{ p.created_at[:10] }}</dd>
+  </dl>
+  {% if p.description %}<h3>Açıklama</h3><p>{{ p.description|nl2br }}</p>{% endif %}
+  {% if p.tech_spec %}<h3>Teknik Özellikler</h3><p class="spec">{{ p.tech_spec|nl2br }}</p>{% endif %}
+</section>
+</div>
+
+{% set entity='product' %}{% set eid=p.id %}{% set allow_upload=can_any('can_edit','can_in','can_purchase') %}
+{% include "_attachments.html" %}
+
+{% if purchases %}
+<section class="card">
+  <h2>💰 Satın Alma Geçmişi</h2>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Tarih</th><th>Tedarikçi</th><th>Belge</th><th class="r">Miktar</th><th class="r">Birim Fiyat</th></tr></thead>
+    <tbody>{% for b in purchases %}
+      <tr><td>{{ b.created_at[:10] }}</td><td>{{ b.supplier_name or '-' }}</td><td>{{ b.document_no }}</td><td class="r">{{ b.qty|qty }}</td><td class="r nowrap">{{ b.unit_price|money(b.currency) }}</td></tr>
+    {% endfor %}</tbody></table></div>
+</section>
+{% endif %}
+
+{% if usage %}
+<section class="card">
+  <h2>🔧 Son 1 Yılda Nerede Kullanıldı</h2>
+  <table class="tbl"><tbody>{% for u in usage %}
+    <tr><td>{{ u.project or '(belirtilmemiş)' }}</td><td class="r">{{ u.q|qty }} {{ p.unit }}</td></tr>
+  {% endfor %}</tbody></table>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Hareket Geçmişi (son 100)</h2>
+  {% set paths = loc_paths %}{% set hide_product = True %}{% include "_moves.html" %}
+</section>
+{% endblock %}

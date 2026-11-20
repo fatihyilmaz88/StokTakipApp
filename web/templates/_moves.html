@@ -1,0 +1,26 @@
+{# değişkenler: moves, paths (opsiyonel), hide_product (opsiyonel) #}
+{% if moves %}
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Tarih</th><th>Tip</th>{% if not hide_product %}<th>Ürün</th>{% endif %}<th class="r">Miktar</th>
+  <th class="hide-m">Nereden → Nereye</th><th class="hide-m">Detay</th><th class="hide-m">Kullanıcı</th></tr></thead>
+  <tbody>
+  {% for m in moves %}
+    <tr onclick="location='{{ url_for('movement_detail', mid=m.id) }}'">
+      <td class="nowrap">{{ m.created_at[:16] }}</td>
+      <td><span class="tag {{ m.type }}">{{ MOVE_LABEL[m.type] }}</span></td>
+      {% if not hide_product %}<td><b>{{ m.code }}</b><br><small>{{ m.name }}</small></td>{% endif %}
+      <td class="r nowrap">{% if m.type=='CIKIS' %}-{% elif m.type!='TRANSFER' and m.qty > 0 %}+{% endif %}{{ m.qty|qty }} {{ m.unit }}</td>
+      <td class="hide-m"><small>{% if paths %}{{ paths.get(m.from_location_id, '') }}{% if m.from_location_id and m.to_location_id %} → {% endif %}{{ paths.get(m.to_location_id, '') }}{% endif %}</small></td>
+      <td class="hide-m"><small>
+        {% if m.supplier_name %}🏭 {{ m.supplier_name }} {% endif %}
+        {% if m.document_no %}📄 {{ m.document_no }} {% endif %}
+        {% if m.project %}🔧 {{ m.project }} {% endif %}
+        {% if m.receiver %}👷 {{ m.receiver }} {% endif %}
+        {% if m.request_id %}📝 {{ req_no(m.request_id) }} {% endif %}
+        {{ m.note }}</small></td>
+      <td class="hide-m">{{ m.full_name }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="muted">Kayıt yok.</p>{% endif %}

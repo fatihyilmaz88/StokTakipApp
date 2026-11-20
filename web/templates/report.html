@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head-row"><h1>{{ title }}</h1>
+  <div class="actions tight"><a class="btn" href="{{ url_for(request.endpoint, csv=1, **a) }}">Excel'e Aktar</a>
+  <button class="btn" onclick="print()">Yazdır</button></div></div>
+{% if note == 'filters_consumption' %}
+<form class="search">
+  <label>Başlangıç<input type="date" name="bas" value="{{ a.get('bas','') }}"></label>
+  <label>Bitiş<input type="date" name="bit" value="{{ a.get('bit','') }}"></label>
+  <select name="grup">{% for k, v in [('proje','Proje / Makine'),('urun','Ürün'),('kullanici','Çıkışı yapan'),('departman','Departman'),('teslim','Teslim alan')] %}
+    <option value="{{ k }}" {{ 'selected' if a.get('grup','proje')==k }}>{{ v }} bazında</option>{% endfor %}</select>
+  <button class="btn primary">Göster</button>
+</form>
+{% elif note == 'filters_value' %}
+<div class="tabs"><a class="{{ 'on' if a.get('grup','kategori')=='kategori' }}" href="?grup=kategori">Kategori bazında</a><a class="{{ 'on' if a.get('grup')=='lokasyon' }}" href="?grup=lokasyon">Lokasyon bazında</a></div>
+{% elif note == 'filters_dead' %}
+<form class="search"><label>Gün<input type="number" name="gun" value="{{ a.get('gun', 180) }}"></label><button class="btn primary">Göster</button></form>
+{% elif note %}<p class="muted">{{ note }}</p>{% endif %}
+<div class="card"><div class="tbl-wrap"><table class="tbl">
+  <thead><tr>{% for h in headers %}<th class="{{ 'r' if loop.index0 in right }}">{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for r in rows %}<tr class="{{ 'total' if r[0]=='TOPLAM' }}">{% for c in r %}<td class="{{ 'r nowrap' if loop.index0 in right }}">{{ c|qty if c is number else c }}</td>{% endfor %}</tr>
+  {% else %}<tr><td colspan="{{ headers|length }}" class="muted">Kayıt yok.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

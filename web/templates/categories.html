@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mid">
+  <h1>Kategoriler</h1>
+  {% if can('can_edit') %}
+  <form method="post" class="search">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="action" value="add">
+    <input name="name" placeholder="Yeni kategori adı" required>
+    <select name="parent_id"><option value="">— Ana kategori —</option>{% for id, path in cats %}<option value="{{ id }}">{{ path }}</option>{% endfor %}</select>
+    <button class="btn primary">Ekle</button>
+  </form>{% endif %}
+  <table class="tbl"><tbody>
+  {% for id, path in cats %}
+    <tr><td><a href="{{ url_for('products', kategori=id) }}">{{ path }}</a></td><td class="r">{{ counts.get(id, 0) }} ürün</td>
+    <td class="r">{% if can('can_edit') %}<form method="post" style="display:inline" onsubmit="return confirm('Silinsin mi?')"><input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ id }}"><button class="link danger">Sil</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td class="muted">Henüz kategori yok. Örn: Elektrik › Kontaktör, Hidrolik › Hortum, Pnömatik, Rulman, Sarf…</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% endblock %}

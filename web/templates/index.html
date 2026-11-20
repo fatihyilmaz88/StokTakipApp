@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Merhaba {{ g.user.full_name }} <small>{{ g.user.role }}</small></h1>
+
+<div class="tiles">
+  <a class="tile" href="{{ url_for('products') }}"><b>{{ stats.total or 0 }}</b><span>Aktif Ürün</span></a>
+  <a class="tile warn" href="{{ url_for('products', kritik=1) }}"><b>{{ stats.low or 0 }}</b><span>Kritik Seviyede</span></a>
+  <a class="tile danger" href="{{ url_for('products', kritik=1) }}"><b>{{ stats.empty or 0 }}</b><span>Stoğu Bitmiş</span></a>
+  <div class="tile"><b>{{ today.get('GIRIS',0) }} / {{ today.get('CIKIS',0) }}</b><span>Bugün Giriş / Çıkış</span></div>
+  {% if badges.get('approve') %}<a class="tile info" href="{{ url_for('requests_list', durum='BEKLIYOR') }}"><b>{{ badges.approve }}</b><span>Onayınızı Bekleyen Talep</span></a>{% endif %}
+  {% if badges.get('issue') %}<a class="tile info" href="{{ url_for('requests_list', durum='acik') }}"><b>{{ badges.issue }}</b><span>Ambardan Teslim Bekleyen</span></a>{% endif %}
+  {% for v in value %}<a class="tile" href="{{ url_for('report_value') }}"><b class="sm">{{ v.v|money(v.currency) }}</b><span>Stok Değeri ({{ v.currency }})</span></a>{% endfor %}
+</div>
+
+<div class="actions">
+  {% if can('can_in') %}<a class="btn in" href="{{ url_for('movement', kind='giris') }}">＋ Stok Girişi</a>{% endif %}
+  {% if can('can_out') %}<a class="btn out" href="{{ url_for('movement', kind='cikis') }}">－ Stok Çıkışı</a>{% endif %}
+  {% if can('can_transfer') %}<a class="btn" href="{{ url_for('movement', kind='transfer') }}">⇄ Transfer</a>{% endif %}
+  {% if can('can_request') %}<a class="btn primary" href="{{ url_for('request_new') }}">📝 Malzeme Talebi</a>{% endif %}
+  {% if can('can_edit') %}<a class="btn" href="{{ url_for('product_new') }}">Yeni Ürün</a>{% endif %}
+</div>
+
+{% if my_requests %}
+<section class="card">
+  <h2>Açık Taleplerim</h2>
+  <table class="tbl"><tbody>
+  {% for r in my_requests %}
+    <tr onclick="location='{{ url_for('request_detail', rid=r.id) }}'"><td><b>{{ req_no(r.id, r.created_at) }}</b></td><td>{{ r.project }}</td>
+    <td><span class="st {{ r.status }}">{{ REQ_STATUS[r.status] }}</span></td></tr>
+  {% endfor %}</tbody></table>
+</section>
+{% endif %}
+
+{% if low %}
+<section class="card">
+  <h2>⚠ Kritik Stoktaki Ürünler</h2>
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Kod</th><th>Ürün</th><th class="r">Mevcut</th><th class="r">Min.</th><th class="hide-m">Tedarikçi</th></tr></thead>
+    <tbody>
+    {% for p in low %}
+      <tr class="{{ 'danger' if p.quantity <= 0 else 'warn' }}" onclick="location='{{ url_for('product_detail', pid=p.id) }}'">
+        <td>{{ p.code }}</td><td>{{ p.name }}</td>
+        <td class="r nowrap">{{ p.quantity|qty }} {{ p.unit }}</td><td class="r">{{ p.min_stock|qty }}</td><td class="hide-m">{{ p.supplier_name or '' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% if can_any('can_report','can_purchase') %}<a href="{{ url_for('report_reorder') }}">Sipariş önerisi raporu →</a>{% endif %}
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Son Hareketler</h2>
+  {% set moves = recent %}{% include "_moves.html" %}
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card narrow">
+  <h1>📦 {{ COMPANY }}</h1><p class="muted">Stok ve Ambar Yönetimi</p>
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label>Kullanıcı Adı<input name="username" autocomplete="username" autocapitalize="none" required autofocus></label>
+    <label>Şifre<input type="password" name="password" autocomplete="current-password" required></label>
+    <button class="btn primary full">Giriş</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head-row"><h1>🏭 Tedarikçiler</h1>
+  {% if can('can_purchase') %}<a class="btn primary" href="{{ url_for('supplier_edit') }}">＋ Yeni Tedarikçi</a>{% endif %}</div>
+<div class="card"><div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Firma</th><th>Yetkili / Telefon</th><th class="hide-m">E-posta</th><th class="r hide-m">Ürün</th><th class="hide-m">Son Alım</th></tr></thead>
+  <tbody>{% for s in rows %}
+    <tr class="{{ 'passive' if not s.active }}" onclick="location='{{ url_for('supplier_detail', sid=s.id) }}'">
+      <td><b>{{ s.name }}</b></td><td>{{ s.contact }}<br><small>{{ s.phone }}</small></td><td class="hide-m">{{ s.email }}</td>
+      <td class="r hide-m">{{ s.n }}</td><td class="hide-m">{{ (s.last_buy or '')[:10] }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">Tedarikçi yok.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{% endblock %}

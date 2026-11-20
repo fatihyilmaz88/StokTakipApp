@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="head-row"><div><h1>🏭 {{ s.name }}</h1><p class="sub">{{ s.contact }}</p></div>
+  {% if can('can_purchase') %}<a class="btn" href="{{ url_for('supplier_edit', sid=s.id) }}">Düzenle</a>{% endif %}</div>
+  <dl class="info">
+    {% if s.phone %}<dt>Telefon</dt><dd><a href="tel:{{ s.phone }}">{{ s.phone }}</a></dd>{% endif %}
+    {% if s.email %}<dt>E-posta</dt><dd><a href="mailto:{{ s.email }}">{{ s.email }}</a></dd>{% endif %}
+    {% if s.website %}<dt>Web</dt><dd>{{ s.website }}</dd>{% endif %}
+    {% if s.tax_no %}<dt>Vergi</dt><dd>{{ s.tax_office }} / {{ s.tax_no }}</dd>{% endif %}
+    {% if s.address %}<dt>Adres</dt><dd>{{ s.address|nl2br }}</dd>{% endif %}
+    {% if s.note %}<dt>Not</dt><dd>{{ s.note|nl2br }}</dd>{% endif %}
+  </dl>
+</div>
+<section class="card"><h2>Bu Tedarikçiden Alınan Ürünler ({{ prods|length }})</h2>
+  <table class="tbl"><tbody>{% for p in prods %}
+    <tr onclick="location='{{ url_for('product_detail', pid=p.id) }}'"><td><b>{{ p.code }}</b></td><td>{{ p.name }}</td><td class="r">{{ p.quantity|qty }} {{ p.unit }}</td>
+    {% if can('can_see_price') %}<td class="r nowrap">{{ p.last_price|money(p.currency) }}</td>{% endif %}</tr>
+  {% else %}<tr><td class="muted">—</td></tr>{% endfor %}</tbody></table></section>
+<section class="card"><h2>Son Alımlar</h2>{% set moves = buys %}{% include "_moves.html" %}</section>
+{% set entity='supplier' %}{% set eid=s.id %}{% set allow_upload=can('can_purchase') %}
+{% include "_attachments.html" %}
+{% endblock %}

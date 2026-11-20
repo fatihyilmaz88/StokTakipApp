@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% macro node(parent) %}
+<ul class="tree">
+{% for l in children.get(parent, []) %}
+  <li class="{{ 'passive' if not l.active }}">
+    <a href="{{ url_for('location_detail', lid=l.id) }}"><span class="tag">{{ l.type }}</span> <b>{{ l.code }}</b> {{ l.name }}</a>
+    {% if l.n %}<small class="muted">· {{ l.n }} kalem</small>{% endif %}
+    {% if children.get(l.id) %}{{ node(l.id) }}{% endif %}
+  </li>
+{% endfor %}
+</ul>
+{% endmacro %}
+{% block content %}
+<div class="head-row"><h1>📍 Ambar Lokasyonları</h1>
+  {% if can('can_edit') %}<a class="btn primary" href="{{ url_for('location_edit') }}">＋ Yeni Depo / Lokasyon</a>{% endif %}</div>
+<p class="muted">Yapı örneği: Ana Ambar › A Bölgesi › Raf A-03 › Göz A-03-02. Her seviyeye QR etiket yapıştırıp telefonla okutarak içeriğini görebilirsiniz.</p>
+<div class="card">{{ node(None) }}</div>
+{% endblock %}

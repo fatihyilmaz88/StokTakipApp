@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head-row"><h1>Malzeme Talepleri</h1>
+  {% if can('can_request') %}<a class="btn primary" href="{{ url_for('request_new') }}">📝 Yeni Talep</a>{% endif %}</div>
+<div class="tabs">
+  {% for k, v in [('acik','Açık'),('BEKLIYOR','Onay Bekleyen'),('ONAYLANDI','Ambarda'),('KISMI','Kısmi'),('TAMAMLANDI','Teslim Edildi'),('REDDEDILDI','Reddedilen'),('','Tümü')] %}
+  <a class="{{ 'on' if a.get('durum','')==k }}" href="{{ url_for('requests_list', durum=k, benim=a.get('benim','')) }}">{{ v }}</a>{% endfor %}
+  {% if see_all %}<a class="{{ 'on' if a.get('benim')=='1' }}" href="{{ url_for('requests_list', durum=a.get('durum',''), benim='' if a.get('benim')=='1' else '1') }}">👤 Sadece benimkiler</a>{% endif %}
+</div>
+<div class="card"><div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>No</th><th>Talep Eden</th><th>Proje / Makine</th><th class="hide-m">Kalem</th><th class="hide-m">İhtiyaç</th><th>Durum</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr onclick="location='{{ url_for('request_detail', rid=r.id) }}'" class="{{ 'warn' if r.priority=='Acil' and r.status in ('BEKLIYOR','ONAYLANDI','KISMI') }}">
+    <td class="nowrap"><b>{{ req_no(r.id, r.created_at) }}</b><br><small>{{ r.created_at[:16] }}</small></td>
+    <td>{{ r.full_name }}<br><small>{{ r.department }}</small></td>
+    <td>{{ r.project }}{% if r.priority=='Acil' %} <span class="tag CIKIS">ACİL</span>{% endif %}</td>
+    <td class="hide-m">{{ r.n }}</td><td class="hide-m">{{ r.needed_date }}</td>
+    <td><span class="st {{ r.status }}">{{ REQ_STATUS[r.status] }}</span></td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="muted">Talep yok.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{% endblock %}
