@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mid">
+  <h1>{{ 'Kullanıcı Düzenle' if u and u.id else 'Yeni Kullanıcı' }}</h1>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="grid2">
+      <label>Kullanıcı Adı *<input name="username" value="{{ u.username if u }}" autocapitalize="none" required></label>
+      <label>Ad Soyad *<input name="full_name" value="{{ u.full_name if u }}" required></label>
+      <label>Departman<input name="department" value="{{ u.department if u }}" list="depts" placeholder="Üretim, Tasarım, Bakım, Ambar…"></label>
+      <label>Telefon<input name="phone" value="{{ u.phone if u }}"></label>
+    </div>
+    <datalist id="depts">{% for d in depts %}<option>{{ d }}</option>{% endfor %}<option>Üretim</option><option>Tasarım</option><option>Bakım</option><option>Ambar</option><option>Satın Alma</option><option>Kalite</option><option>Yönetim</option></datalist>
+    <label>{{ 'Yeni Şifre (boş bırakırsanız değişmez)' if u and u.id else 'Geçici Şifre *' }}
+      <input type="password" name="password" autocomplete="new-password" {{ '' if u and u.id else 'required minlength=6' }}></label>
+    <p class="muted">Kullanıcı ilk girişinde kendi şifresini belirlemek zorundadır.</p>
+    <label>Rol Şablonu <small>(seçince yetkiler otomatik işaretlenir, sonra tek tek değiştirebilirsiniz)</small>
+      <select name="role" id="role"><option value="">— Özel —</option>
+        {% for r in ROLES %}<option {{ 'selected' if u and u.role==r }}>{{ r }}</option>{% endfor %}</select></label>
+    <fieldset><legend>Yetkiler</legend>
+      <p class="muted small">Herkes stokları, ürün kartlarını ve lokasyonları görüntüleyebilir.</p>
+      {% for key, label in PERMISSIONS %}
+      <label class="chk"><input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if u and u[key] }}> {{ label }}</label>
+      {% endfor %}
+    </fieldset>
+    <label class="chk"><input type="checkbox" name="active" value="1" {{ 'checked' if not u or u.active }}> Hesap aktif</label>
+    <button class="btn primary full">Kaydet</button>
+  </form>
+</div>
+<script>
+const ROLES = {{ ROLES|tojson }};
+document.getElementById('role').addEventListener('change', e => {
+  const p = ROLES[e.target.value]; if (!p) return;
+  document.querySelectorAll('fieldset input[type=checkbox]').forEach(c => c.checked = p.includes(c.name));
+});
+</script>
+{% endblock %}

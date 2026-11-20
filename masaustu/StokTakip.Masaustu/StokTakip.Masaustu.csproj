@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>StokTakip.Masaustu</RootNamespace>
+    <AssemblyName>StokTakip</AssemblyName>
+    <!-- Formlar kodla, piksel ölçüleriyle kurulduğu için Windows ölçekler; metin GDI ile net kalır -->
+    <ApplicationHighDpiMode>DpiUnawareGdiScaled</ApplicationHighDpiMode>
+    <!-- Linux/CI üzerinde derleme kontrolü için; Windows'ta etkisi yok -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Version>2.0.0</Version>
+    <Product>Fabrika Stok ve Ambar Yönetimi</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StokTakip.Core\StokTakip.Core.csproj" />
+  </ItemGroup>
+</Project>

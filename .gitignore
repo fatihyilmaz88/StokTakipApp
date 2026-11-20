@@ -1,0 +1,15 @@
+# Veri ve gizli dosyalar (asla GitHub'a gitmesin)
+*.db
+*.db-wal
+*.db-shm
+.secret_key
+uploads/
+yedek/
+venv/
+__pycache__/
+# Visual Studio / .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo

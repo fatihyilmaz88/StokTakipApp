@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head-row">
+  <h1>Ürünler <small>({{ rows|length }})</small></h1>
+  <div class="actions tight">
+    {% if can('can_edit') %}<a class="btn primary" href="{{ url_for('product_new') }}">＋ Yeni Ürün</a>
+    <a class="btn" href="{{ url_for('product_import') }}">CSV İçe Aktar</a>
+    <a class="btn" href="{{ url_for('categories') }}">Kategoriler</a>{% endif %}
+    {% if can('can_report') %}<a class="btn" href="{{ request.full_path }}&csv=1">Excel'e Aktar</a>{% endif %}
+  </div>
+</div>
+<form class="search" id="pf">
+  <input name="q" value="{{ q }}" placeholder="Kod, ad, marka, model, açıklama…">
+  <select name="kategori"><option value="">Tüm kategoriler</option>
+    {% for id, path in cats %}<option value="{{ id }}" {{ 'selected' if a.get('kategori')==id|string }}>{{ path }}</option>{% endfor %}</select>
+  <select name="lokasyon"><option value="">Tüm lokasyonlar</option>
+    {% for id, path in locs %}<option value="{{ id }}" {{ 'selected' if a.get('lokasyon')==id|string }}>{{ path }}</option>{% endfor %}</select>
+  <select name="marka"><option value="">Tüm markalar</option>
+    {% for b in brands %}<option {{ 'selected' if a.get('marka')==b }}>{{ b }}</option>{% endfor %}</select>
+  <select name="tedarikci"><option value="">Tüm tedarikçiler</option>
+    {% for s in suppliers %}<option value="{{ s.id }}" {{ 'selected' if a.get('tedarikci')==s.id|string }}>{{ s.name }}</option>{% endfor %}</select>
+  <label class="chk"><input type="checkbox" name="kritik" value="1" {{ 'checked' if a.get('kritik')=='1' }}> Sadece kritik</label>
+  <label class="chk"><input type="checkbox" name="pasif" value="1" {{ 'checked' if a.get('pasif')=='1' }}> Pasifler</label>
+  <button class="btn primary">Filtrele</button>
+</form>
+<div class="card">
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Kod</th><th>Ürün</th><th class="hide-m">Marka / Model</th><th class="hide-m">Kategori</th><th class="hide-m">Lokasyon</th><th class="r">Miktar</th><th class="r hide-m">Min.</th></tr></thead>
+  <tbody>
+  {% for p in rows %}
+    <tr class="{{ 'danger' if p.quantity <= 0 else ('warn' if p.min_stock > 0 and p.quantity <= p.min_stock) }} {{ 'passive' if not p.active }}"
+        onclick="location='{{ url_for('product_detail', pid=p.id) }}'">
+      <td><b>{{ p.code }}</b></td><td>{{ p.name }}<span class="show-m"><br><small>{{ p.brand }} {{ p.model }} · {{ where.get(p.id, [])|join(', ') }}</small></span></td>
+      <td class="hide-m">{{ p.brand }}<br><small>{{ p.model }}</small></td>
+      <td class="hide-m"><small>{{ p.cat_name or '' }}</small></td>
+      <td class="hide-m"><small>{{ where.get(p.id, [])|join(', ') }}</small></td>
+      <td class="r nowrap"><b>{{ p.quantity|qty }}</b> {{ p.unit }}</td><td class="r hide-m">{{ p.min_stock|qty }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="muted">Ürün bulunamadı.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% if rows %}<p><a href="{{ url_for('labels', urun=rows|map(attribute='id')|join(',')) }}" target="_blank">🏷 Listedeki ürünlerin QR etiketlerini yazdır</a></p>{% endif %}
+</div>
+{% endblock %}

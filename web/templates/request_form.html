@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mid">
+  <h1>📝 Yeni Malzeme Talebi</h1>
+  <p class="muted">Talep onaylandıktan sonra ambar tarafından hazırlanıp teslim edilir. Tüm aşamaları bu sayfadan takip edebilirsiniz.</p>
+  <form method="post" enctype="multipart/form-data" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="grid2">
+      <label>Proje / İş Emri / Makine *<input name="project" list="projects" required value="{{ request.form.get('project','') }}" placeholder="ör. PRES-12 montaj"></label>
+      <label>İhtiyaç Tarihi<input type="date" name="needed_date" value="{{ request.form.get('needed_date','') }}"></label>
+      <label>Öncelik<select name="priority"><option>Normal</option><option>Acil</option><option>Düşük</option></select></label>
+    </div>
+    <datalist id="projects">{% for p in projects %}<option>{{ p }}</option>{% endfor %}</datalist>
+    <h3>Kalemler</h3>
+    <div id="items">
+      <div class="item-row">
+        <input name="code" placeholder="Stok kodu / ara" list="sugg" class="icode">
+        <input name="qty" placeholder="Miktar" inputmode="decimal" class="iqty">
+        <input name="item_note" placeholder="Not (ops.)" class="inote">
+        <button type="button" class="btn" onclick="this.parentNode.remove()" title="Sil">✕</button>
+        <small class="iinfo"></small>
+      </div>
+    </div>
+    <datalist id="sugg"></datalist>
+    <button type="button" class="btn" onclick="addRow()">＋ Kalem Ekle</button>
+    <label style="margin-top:12px">Açıklama<textarea name="note" rows="2">{{ request.form.get('note','') }}</textarea></label>
+    <label>Ek (teknik resim, liste, fotoğraf…)<input type="file" name="files" multiple></label>
+    <button class="btn primary full">Talebi Gönder</button>
+  </form>
+</div>
+<script>
+const tpl = document.querySelector('.item-row').cloneNode(true);
+function addRow() { const r = tpl.cloneNode(true); r.querySelectorAll('input').forEach(i => i.value=''); r.querySelector('.iinfo').textContent=''; document.getElementById('items').appendChild(r); bind(r); r.querySelector('.icode').focus(); }
+let t;
+function bind(row) {
+  const c = row.querySelector('.icode'), info = row.querySelector('.iinfo');
+  c.addEventListener('input', () => { clearTimeout(t); t = setTimeout(async () => {
+    const r = await fetch('{{ url_for("api_search") }}?q=' + encodeURIComponent(c.value)).then(r => r.json());
+    const s = document.getElementById('sugg'); s.innerHTML='';
+    r.items.forEach(i => { const o = document.createElement('option'); o.value=i.code; o.label=i.label; s.appendChild(o); });
+  }, 250); });
+  c.addEventListener('change', async () => {
+    const r = await fetch('{{ url_for("api_product_lookup") }}?code=' + encodeURIComponent(c.value)).then(r => r.json());
+    info.textContent = r.found ? `${r.name} ${r.brand} ${r.model} — stok: ${r.quantity} ${r.unit}` : (c.value ? '⚠ ürün bulunamadı' : '');
+  });
+  c.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); row.querySelector('.iqty').focus(); } });
+  row.querySelector('.iqty').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); addRow(); } });
+}
+bind(document.querySelector('.item-row'));
+</script>
+{% endblock %}

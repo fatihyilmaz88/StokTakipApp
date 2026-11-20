@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head-row"><h1>Stok Hareketleri</h1>
+  <a class="btn" href="{{ url_for('movements', csv=1, **a) }}">Excel'e Aktar</a></div>
+<form class="search">
+  <label>Başlangıç<input type="date" name="bas" value="{{ a.get('bas','') }}"></label>
+  <label>Bitiş<input type="date" name="bit" value="{{ a.get('bit','') }}"></label>
+  <select name="tip"><option value="">Tüm tipler</option>
+    {% for k, v in MOVE_LABEL.items() %}<option value="{{ k }}" {{ 'selected' if a.get('tip')==k }}>{{ v }}</option>{% endfor %}</select>
+  <select name="lokasyon"><option value="">Tüm lokasyonlar</option>
+    {% for id, path in locs %}<option value="{{ id }}" {{ 'selected' if a.get('lokasyon')==id|string }}>{{ path }}</option>{% endfor %}</select>
+  <select name="kullanici"><option value="">Tüm kullanıcılar</option>
+    {% for u in users %}<option value="{{ u.id }}" {{ 'selected' if a.get('kullanici')==u.id|string }}>{{ u.full_name }}</option>{% endfor %}</select>
+  <select name="tedarikci"><option value="">Tüm tedarikçiler</option>
+    {% for s in suppliers %}<option value="{{ s.id }}" {{ 'selected' if a.get('tedarikci')==s.id|string }}>{{ s.name }}</option>{% endfor %}</select>
+  <input name="q" value="{{ a.get('q','') }}" placeholder="Kod, ürün, belge, proje, kişi">
+  <button class="btn primary">Filtrele</button>
+</form>
+<div class="card">{% set moves = rows %}{% include "_moves.html" %}
+{% if rows|length == 500 %}<p class="muted">İlk 500 kayıt gösteriliyor. Tamamı için Excel'e aktarın.</p>{% endif %}</div>
+{% endblock %}

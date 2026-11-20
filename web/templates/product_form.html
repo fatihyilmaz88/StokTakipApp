@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mid">
+  <h1>{{ 'Yeni Ürün' if new else 'Ürün Düzenle: ' ~ p.code }}</h1>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <h3>Tanım</h3>
+    <div class="grid2">
+      <label>Stok Kodu *<input name="code" value="{{ p.code or '' }}" required {{ 'autofocus' if new }}></label>
+      <label>Barkod (üretici barkodu, opsiyonel)<input name="barcode" value="{{ p.barcode or '' }}"></label>
+    </div>
+    <label>Ürün Adı *<input name="name" value="{{ p.name or '' }}" required></label>
+    <div class="grid2">
+      <label>Marka / Üretici<input name="brand" value="{{ p.brand or '' }}" list="brands"></label>
+      <label>Model / Parça No (MPN)<input name="model" value="{{ p.model or '' }}"></label>
+      <label>Kategori
+        <select name="category_id"><option value="">—</option>
+        {% for id, path in cats %}<option value="{{ id }}" {{ 'selected' if p.category_id==id }}>{{ path }}</option>{% endfor %}</select></label>
+      <label>Birim<input name="unit" value="{{ p.unit or 'adet' }}" list="units"></label>
+    </div>
+    <label>Açıklama<textarea name="description" rows="2">{{ p.description or '' }}</textarea></label>
+    <label>Teknik Özellikler <small>(ör. 24VDC, 32A, IP65, 250 bar, DN16…)</small><textarea name="tech_spec" rows="3">{{ p.tech_spec or '' }}</textarea></label>
+
+    <h3>Ambar</h3>
+    <div class="grid2">
+      <label>Varsayılan Lokasyon (rafı)
+        <select name="default_location_id"><option value="">—</option>
+        {% for id, path in locs %}<option value="{{ id }}" {{ 'selected' if p.default_location_id==id }}>{{ path }}</option>{% endfor %}</select></label>
+      <label>Ana Tedarikçi
+        <select name="default_supplier_id"><option value="">—</option>
+        {% for s in suppliers %}<option value="{{ s.id }}" {{ 'selected' if p.default_supplier_id==s.id }}>{{ s.name }}</option>{% endfor %}</select></label>
+      <label>Minimum Stok (kritik seviye)<input name="min_stock" value="{{ p.min_stock|qty }}" inputmode="decimal"></label>
+      <label>Maksimum Stok (sipariş hedefi)<input name="max_stock" value="{{ p.max_stock|qty }}" inputmode="decimal"></label>
+      {% if can('can_see_price') %}
+      <label>Son Alış Fiyatı<input name="last_price" value="{{ p.last_price|qty }}" inputmode="decimal"></label>
+      <label>Para Birimi<select name="currency">{% for c in CURRENCIES %}<option {{ 'selected' if p.currency==c }}>{{ c }}</option>{% endfor %}</select></label>
+      {% endif %}
+      {% if new %}<label>Başlangıç Miktarı (varsayılan lokasyona)<input name="initial" value="0" inputmode="decimal"></label>{% endif %}
+    </div>
+    {% if new %}
+    <h3>Dosyalar</h3>
+    <div class="grid2">
+      <label>Dosya Türü<select name="kind">{% for k in ATTACH_KINDS %}<option {{ 'selected' if k=='Fotoğraf' }}>{{ k }}</option>{% endfor %}</select></label>
+      <label>Fotoğraf / Datasheet / Teknik resim<input type="file" name="files" multiple></label>
+    </div>
+    {% else %}
+    <label class="chk"><input type="checkbox" name="active" value="1" {{ 'checked' if p.active }}> Aktif (kaldırırsanız ürün gizlenir, geçmişi silinmez)</label>
+    <p class="muted">Miktar buradan değiştirilmez: Giriş / Çıkış / Transfer / Sayım kullanın (izlenebilirlik için).</p>
+    {% endif %}
+    <datalist id="units">{% for u in units %}<option>{{ u }}</option>{% endfor %}</datalist>
+    <datalist id="brands">{% for b in brands %}<option>{{ b }}</option>{% endfor %}</datalist>
+    <button class="btn primary full">Kaydet</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head-row"><h1>Kullanıcılar</h1>
+  <div class="actions tight"><a class="btn primary" href="{{ url_for('user_edit') }}">＋ Yeni Kullanıcı</a>
+  <a class="btn" href="{{ url_for('report_audit') }}">Denetim Kaydı</a></div></div>
+<div class="card"><div class="tbl-wrap">
+<table class="tbl">
+  <thead><tr><th>Ad Soyad</th><th>Rol / Departman</th><th class="hide-m">Yetkiler</th><th class="hide-m">Son Giriş</th></tr></thead>
+  <tbody>
+  {% for u in rows %}
+    <tr class="{{ 'passive' if not u.active }}" onclick="location='{{ url_for('user_edit', uid=u.id) }}'">
+      <td><b>{{ u.full_name }}</b><br><small>{{ u.username }}{% if not u.active %} · PASİF{% endif %}</small></td>
+      <td>{{ u.role }}<br><small>{{ u.department }}</small></td>
+      <td class="hide-m">{% if u.is_admin %}<span class="tag">YÖNETİCİ</span>{% else %}
+        {% for k, lbl in PERMISSIONS if u[k] %}<span class="tag">{{ lbl.split(' (')[0].split(' /')[0] }}</span>{% else %}<span class="muted">Sadece görüntüleme</span>{% endfor %}{% endif %}</td>
+      <td class="hide-m"><small>{{ (u.last_login or '-')[:16] }}</small></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

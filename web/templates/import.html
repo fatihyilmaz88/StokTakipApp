@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mid">
+  <h1>CSV ile Toplu Ürün Ekle</h1>
+  <p>Excel'de aşağıdaki sırayla kolon hazırlayıp <b>"CSV (noktalı virgülle ayrılmış)"</b> olarak kaydedin. Sadece ilk iki kolon zorunlu:</p>
+  <pre>kod;ad;kategori;birim;lokasyon_kodu;min_stok;miktar;marka;model;tedarikci;fiyat;para
+HRT-001;Hortum 1/2" 2SN;Hidrolik/Hortum;m;A-01;20;150;Parker;492TC-8;Hidromek Ltd;85,50;TRY
+CNT-010;Kontaktör 3P 18A 24VDC;Elektrik/Kontaktör;adet;B-03;5;12;Schneider;LC1D18BD;Elektrik A.Ş.;42;EUR</pre>
+  <ul class="muted">
+    <li>Kategori "Ana/Alt" şeklinde yazılırsa ağaç otomatik oluşur.</li>
+    <li>Olmayan lokasyon kodu ve tedarikçi otomatik oluşturulur.</li>
+    <li>Sistemde zaten olan stok kodları atlanır (üzerine yazılmaz).</li>
+  </ul>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <input type="file" name="file" accept=".csv,text/csv" required>
+    <button class="btn primary full">Yükle</button>
+  </form>
+</div>
+{% endblock %}

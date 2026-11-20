@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mid">
+  <h1><span class="tag {{ m.type }}">{{ MOVE_LABEL[m.type] }}</span> Hareket #{{ m.id }}</h1>
+  <dl class="info">
+    <dt>Tarih</dt><dd>{{ m.created_at }}</dd>
+    <dt>Ürün</dt><dd><a href="{{ url_for('product_detail', pid=m.product_id) }}"><b>{{ m.code }}</b> — {{ m.name }}</a></dd>
+    <dt>Miktar</dt><dd><b>{{ m.qty|qty }} {{ m.unit }}</b> (toplam {{ m.qty_before|qty }} → {{ m.qty_after|qty }})</dd>
+    {% if m.from_location_id %}<dt>Nereden</dt><dd>{{ paths.get(m.from_location_id) }}</dd>{% endif %}
+    {% if m.to_location_id %}<dt>Nereye</dt><dd>{{ paths.get(m.to_location_id) }}</dd>{% endif %}
+    {% if m.supplier_name %}<dt>Tedarikçi</dt><dd>{{ m.supplier_name }}</dd>{% endif %}
+    {% if m.document_no %}<dt>Belge No</dt><dd>{{ m.document_no }} {{ m.document_date }}</dd>{% endif %}
+    {% if m.unit_price is not none and can('can_see_price') %}<dt>Birim Fiyat</dt><dd>{{ m.unit_price|money(m.currency) }} (Tutar: {{ (m.unit_price*m.qty)|money(m.currency) }})</dd>{% endif %}
+    {% if m.project %}<dt>Proje / Makine</dt><dd>{{ m.project }}</dd>{% endif %}
+    {% if m.receiver %}<dt>Teslim Alan</dt><dd>{{ m.receiver }}</dd>{% endif %}
+    {% if m.request_id %}<dt>Talep</dt><dd><a href="{{ url_for('request_detail', rid=m.request_id) }}">{{ req_no(m.request_id) }}</a></dd>{% endif %}
+    {% if m.note %}<dt>Açıklama</dt><dd>{{ m.note }}</dd>{% endif %}
+    <dt>İşlemi Yapan</dt><dd>{{ m.full_name }}</dd>
+  </dl>
+</div>
+{% if can_any('can_see_price','can_purchase','can_in') %}
+{% set entity='movement' %}{% set eid=m.id %}{% set allow_upload=can_any('can_in','can_purchase') %}
+{% include "_attachments.html" %}
+{% endif %}
+{% endblock %}

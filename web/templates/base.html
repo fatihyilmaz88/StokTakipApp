@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f4e79">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<title>{% block title %}{{ COMPANY }} – Stok{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+{% if g.user %}
+<header class="top">
+  <a class="brand" href="{{ url_for('index') }}">📦 {{ COMPANY }}</a>
+  <form class="qs" action="{{ url_for('global_search') }}">
+    <input name="q" placeholder="Kod / barkod / lokasyon / ürün ara…" aria-label="Ara">
+    <button type="button" class="scan-btn" data-scan-target="prev" title="Kamerayla okut" hidden>📷</button>
+  </form>
+  <button class="menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="Menü">☰</button>
+  <nav>
+    <a href="{{ url_for('products') }}">Ürünler</a>
+    {% if can('can_request') or can_any('can_approve','can_out') %}<a href="{{ url_for('requests_list') }}">Talepler
+      {% set n = (badges.get('approve',0) + badges.get('issue',0)) %}{% if n %}<span class="badge">{{ n }}</span>{% endif %}</a>{% endif %}
+    {% if can('can_in') %}<a href="{{ url_for('movement', kind='giris') }}">Giriş</a>{% endif %}
+    {% if can('can_out') %}<a href="{{ url_for('movement', kind='cikis') }}">Çıkış</a>{% endif %}
+    {% if can('can_transfer') %}<a href="{{ url_for('movement', kind='transfer') }}">Transfer</a>{% endif %}
+    <a href="{{ url_for('locations') }}">Lokasyonlar</a>
+    {% if can_any('can_purchase','can_in','can_see_price','can_report') %}<a href="{{ url_for('suppliers') }}">Tedarikçiler</a>{% endif %}
+    {% if can_any('can_report','can_see_price') %}<a href="{{ url_for('reports') }}">Raporlar</a>{% endif %}
+    {% if can('is_admin') %}<a href="{{ url_for('users') }}">Kullanıcılar</a>{% endif %}
+    <a href="{{ url_for('change_password') }}" title="Şifre değiştir">👤 {{ g.user.full_name }}</a>
+    <a href="{{ url_for('logout') }}">Çıkış Yap</a>
+  </nav>
+</header>
+{% endif %}
+<main>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<dialog id="scanDlg"><video id="scanVideo" playsinline muted></video>
+  <p class="muted">Barkodu / QR kodu kameraya gösterin</p><button class="btn full" onclick="stopScan()">Kapat</button></dialog>
+</body>
+</html>

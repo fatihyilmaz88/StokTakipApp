@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="head-row">
+    <div><h1><span class="tag">{{ loc.type }}</span> {{ loc.code }} {% if not loc.active %}<span class="tag">PASİF</span>{% endif %}</h1>
+    <p class="sub">{{ path }}</p>{% if loc.description %}<p>{{ loc.description }}</p>{% endif %}</div>
+  </div>
+  <div class="actions">
+    {% if can('can_in') %}<a class="btn in" href="{{ url_for('movement', kind='giris', to_location_id=loc.id) }}">＋ Buraya Giriş</a>{% endif %}
+    {% if can('can_edit') %}<a class="btn" href="{{ url_for('location_edit', lid=loc.id) }}">Düzenle</a>
+    <a class="btn" href="{{ url_for('location_edit', ust=loc.id) }}">＋ Alt Lokasyon</a>{% endif %}
+    <a class="btn" href="{{ url_for('labels', lokasyon=loc.id) }}" target="_blank">🏷 QR Etiket</a>
+    {% if subs %}<a class="btn" href="{{ url_for('labels', lokasyon=loc.id, alt=1) }}" target="_blank">🏷 Tüm Alt Etiketler</a>{% endif %}
+    {% if can('can_report') %}<a class="btn" href="{{ url_for('movements', lokasyon=loc.id) }}">Hareketler</a>{% endif %}
+  </div>
+  {% if subs %}<h3>Alt Lokasyonlar</h3><div class="chips">{% for s in subs %}<a href="{{ url_for('location_detail', lid=s.id) }}" class="{{ 'passive' if not s.active }}">{{ s.code }}</a>{% endfor %}</div>{% endif %}
+  {% if can('can_edit') %}
+  <details><summary>Seri raf/göz oluştur</summary>
+    <form method="post" action="{{ url_for('location_bulk') }}" class="search">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}"><input type="hidden" name="parent_id" value="{{ loc.id }}">
+      <label>Önek<input name="prefix" value="G" required></label>
+      <label>Başlangıç<input name="start" type="number" value="1"></label>
+      <label>Bitiş<input name="end" type="number" value="10"></label>
+      <label>Tip<select name="type"><option>Göz</option><option>Raf</option><option>Koridor</option><option>Bölge</option></select></label>
+      <button class="btn">Oluştur</button>
+    </form>
+    <p class="muted small">Örn. {{ loc.code }}-G01 … {{ loc.code }}-G10</p>
+  </details>{% endif %}
+</div>
+<section class="card">
+  <h2>İçindeki Ürünler ({{ items|length }})</h2>
+  {% if items %}
+  <div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Lokasyon</th><th>Kod</th><th>Ürün</th><th class="r">Miktar</th></tr></thead>
+    <tbody>{% for i in items %}
+      <tr onclick="location='{{ url_for('product_detail', pid=i.product_id) }}'"><td><small>{{ i.loc_code }}</small></td><td><b>{{ i.code }}</b></td>
+      <td>{{ i.name }}<br><small>{{ i.brand }} {{ i.model }}</small></td><td class="r nowrap">{{ i.qty|qty }} {{ i.unit }}</td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}<p class="muted">Boş.</p>{% endif %}
+</section>
+{% set entity='location' %}{% set eid=loc.id %}{% set allow_upload=can('can_edit') %}
+{% include "_attachments.html" %}
+{% endblock %}
