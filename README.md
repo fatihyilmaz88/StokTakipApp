@@ -16,4 +16,8 @@ Fabrika ambarı için stok takip programı. İki sürüm var, **aynı veritaban�
 - Raporlar (tüketim, sipariş önerisi, stok değeri, hareketsiz stok, denetim kaydı), Excel (CSV) aktarım
 - Web sürümünde QR etiket ve telefondan kullanım
 
-Kurulum: [web/KURULUM.md](web/KURULUM.md) · [masaustu/README.md](masaustu/README.md)
+## Hangisini kullanmalıyım?
+- **Tek bilgisayar** → `masaustu/StokTakip.sln` dosyasını Visual Studio 2022 ile açın, F5. Ayrıntı: [masaustu/README.md](masaustu/README.md)
+- **Ambar + ofis + telefon** → `web/` klasörünü fabrika sunucusuna kurun. Ayrıntı: [web/KURULUM.md](web/KURULUM.md)
+
+Masaüstünde başlayıp sonra web'e geçmek için `stok.db` ve `uploads` klasörünü kopyalamanız yeterlidir; kullanıcılar aynı şifrelerle girer.
